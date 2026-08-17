@@ -8,16 +8,10 @@ on:
         required: true
         type: string
       format:
-        description: 'פורמט הורדה'
+        description: 'פורמט הורדה (yt-dlp format string)'
         required: true
         default: 'bestvideo+bestaudio/best'
-        type: choice
-        options:
-          - 'bestvideo+bestaudio/best'
-          - 'bestvideo[height<=1080]+bestaudio/best[height<=1080]'
-          - 'bestvideo[height<=720]+bestaudio/best[height<=720]'
-          - 'bestvideo[height<=480]+bestaudio/best[height<=480]'
-          - 'bestaudio/best'
+        type: string
       title:
         description: 'שם הסרטון (אופציונלי)'
         required: false

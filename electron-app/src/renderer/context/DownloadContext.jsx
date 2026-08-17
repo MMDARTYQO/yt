@@ -78,10 +78,14 @@ export function DownloadProvider({ children }) {
 
   const startDownload = useCallback(
     async ({ url, format, title }) => {
-      if (!settings) return
+      // טעינה מחדש של הגדרות אם צריך
+      const currentSettings = settings || (await window.cinematek.settings.get())
+      if (!currentSettings?.githubRepo) {
+        throw new Error('חסר שם ה-repo בהגדרות — פתח הגדרות והזן MMDARTYQO/yt')
+      }
 
       const downloadId = `dl_${Date.now()}`
-      const repo = settings.githubRepo
+      const repo = currentSettings.githubRepo
 
       const newItem = {
         id: downloadId,
