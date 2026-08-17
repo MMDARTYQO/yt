@@ -1,0 +1,56 @@
+{
+  "name": "cinematek",
+  "version": "1.0.0",
+  "description": "סינמטק - הורד וצפה בסרטים מיוטיוב",
+  "main": "src/main.js",
+  "scripts": {
+    "start": "electron .",
+    "dev": "concurrently \"npm run vite\" \"wait-on http://localhost:5173 && electron .\"",
+    "vite": "vite",
+    "build": "vite build",
+    "dist": "npm run build && electron-builder"
+  },
+  "keywords": [],
+  "author": "סינמטק",
+  "license": "MIT",
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.3.1",
+    "autoprefixer": "^10.4.20",
+    "concurrently": "^9.1.0",
+    "electron": "^33.2.0",
+    "electron-builder": "^25.1.8",
+    "postcss": "^8.4.49",
+    "tailwindcss": "^3.4.15",
+    "vite": "^5.4.11",
+    "wait-on": "^8.0.1"
+  },
+  "dependencies": {
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-router-dom": "^6.28.0",
+    "electron-store": "^10.0.0",
+    "framer-motion": "^11.12.0",
+    "lucide-react": "^0.468.0"
+  },
+  "build": {
+    "appId": "com.cinematek.app",
+    "productName": "סינמטק",
+    "directories": {
+      "output": "dist-electron"
+    },
+    "files": [
+      "src/main.js",
+      "src/preload.js",
+      "dist/**/*"
+    ],
+    "win": {
+      "target": "nsis"
+    },
+    "mac": {
+      "target": "dmg"
+    },
+    "linux": {
+      "target": "AppImage"
+    }
+  }
+}

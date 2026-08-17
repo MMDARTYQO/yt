@@ -1,0 +1,83 @@
+name: הורדת סרטון
+
+on:
+  workflow_dispatch:
+    inputs:
+      url:
+        description: 'כתובת YouTube'
+        required: true
+        type: string
+      format:
+        description: 'פורמט הורדה'
+        required: true
+        default: 'bestvideo+bestaudio/best'
+        type: choice
+        options:
+          - 'bestvideo+bestaudio/best'
+          - 'bestvideo[height<=1080]+bestaudio/best[height<=1080]'
+          - 'bestvideo[height<=720]+bestaudio/best[height<=720]'
+          - 'bestvideo[height<=480]+bestaudio/best[height<=480]'
+          - 'bestaudio/best'
+      title:
+        description: 'שם הסרטון (אופציונלי)'
+        required: false
+        type: string
+
+jobs:
+  download:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: התקנת yt-dlp
+        run: |
+          sudo curl -L https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp -o /usr/local/bin/yt-dlp
+          sudo chmod a+rx /usr/local/bin/yt-dlp
+          yt-dlp --version
+
+      - name: התקנת ffmpeg
+        run: sudo apt-get install -y ffmpeg
+
+      - name: הורדת הסרטון
+        run: |
+          mkdir -p downloads
+          
+          CUSTOM_TITLE="${{ github.event.inputs.title }}"
+          
+          if [ -n "$CUSTOM_TITLE" ]; then
+            OUTPUT_TEMPLATE="downloads/${CUSTOM_TITLE}.%(ext)s"
+          else
+            OUTPUT_TEMPLATE="downloads/%(title)s.%(ext)s"
+          fi
+          
+          yt-dlp \
+            --format "${{ github.event.inputs.format }}" \
+            --merge-output-format mp4 \
+            --output "$OUTPUT_TEMPLATE" \
+            --write-thumbnail \
+            --write-info-json \
+            --no-playlist \
+            --progress \
+            "${{ github.event.inputs.url }}"
+
+      - name: בדיקת קבצים שהורדו
+        run: |
+          echo "=== קבצים שהורדו ==="
+          ls -lh downloads/
+          echo "=== מידע על הסרטון ==="
+          cat downloads/*.info.json 2>/dev/null | python3 -c "
+          import sys, json
+          data = json.load(sys.stdin)
+          print('כותרת:', data.get('title', 'לא ידוע'))
+          print('משך:', data.get('duration_string', 'לא ידוע'))
+          print('צופים:', data.get('view_count', 'לא ידוע'))
+          print('תאריך העלאה:', data.get('upload_date', 'לא ידוע'))
+          " 2>/dev/null || true
+
+      - name: העלאת הסרטון כ-Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: video-download
+          path: downloads/
+          retention-days: 1
+          if-no-files-found: error
