@@ -29,6 +29,11 @@ jobs:
           sudo chmod a+rx /usr/local/bin/yt-dlp
           yt-dlp --version
 
+      - name: התקנת Deno (JS runtime לyt-dlp)
+        run: |
+          curl -fsSL https://deno.land/install.sh | sh
+          echo "$HOME/.deno/bin" >> $GITHUB_PATH
+
       - name: התקנת ffmpeg
         run: sudo apt-get install -y ffmpeg
 
