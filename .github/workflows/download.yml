@@ -29,6 +29,11 @@ jobs:
           sudo chmod a+rx /usr/local/bin/yt-dlp
           yt-dlp --version
 
+      - name: התקנת Deno (JS runtime לyt-dlp)
+        run: |
+          curl -fsSL https://deno.land/install.sh | sh
+          echo "$HOME/.deno/bin" >> $GITHUB_PATH
+
       - name: התקנת ffmpeg
         run: sudo apt-get install -y ffmpeg
 
@@ -51,8 +56,10 @@ jobs:
           yt-dlp \
             --format "${{ github.event.inputs.format }}" \
             --merge-output-format mp4 \
+            --remux-video mp4 \
             --output "$OUTPUT_TEMPLATE" \
             --write-thumbnail \
+            --convert-thumbnails jpg \
             --write-info-json \
             --no-playlist \
             --progress \
@@ -72,6 +79,22 @@ jobs:
           print('צופים:', data.get('view_count', 'לא ידוע'))
           print('תאריך העלאה:', data.get('upload_date', 'לא ידוע'))
           " 2>/dev/null || true
+
+      - name: וידוא שקיים קובץ MP4
+        run: |
+          MP4_COUNT=$(find downloads/ -maxdepth 1 -name "*.mp4" | wc -l)
+          echo "נמצאו ${MP4_COUNT} קבצי MP4"
+          if [ "$MP4_COUNT" -eq 0 ]; then
+            echo "שגיאה: לא נוצר קובץ MP4. תוכן התיקייה:"
+            ls -lah downloads/
+            exit 1
+          fi
+          # מחק קבצים זמניים של yt-dlp (חלקים שלא מוזגו)
+          find downloads/ -maxdepth 1 -name "*.part" -delete
+          find downloads/ -maxdepth 1 -name "*.ytdl" -delete
+          find downloads/ -maxdepth 1 -name "*.f[0-9]*" -delete
+          echo "קבצים סופיים:"
+          ls -lh downloads/
 
       - name: העלאת הסרטון כ-Artifact
         uses: actions/upload-artifact@v4
