@@ -32,6 +32,10 @@ jobs:
       - name: התקנת ffmpeg
         run: sudo apt-get install -y ffmpeg
 
+      - name: הגדרת cookies
+        run: |
+          echo "${{ secrets.YOUTUBE_COOKIES }}" > /tmp/cookies.txt
+
       - name: הורדת הסרטון
         run: |
           mkdir -p downloads
@@ -52,6 +56,7 @@ jobs:
             --write-info-json \
             --no-playlist \
             --progress \
+            --cookies /tmp/cookies.txt \
             "${{ github.event.inputs.url }}"
 
       - name: בדיקת קבצים שהורדו
