@@ -35,7 +35,8 @@ jobs:
           echo "$HOME/.deno/bin" >> $GITHUB_PATH
 
       - name: התקנת ffmpeg
-        run: sudo apt-get install -y ffmpeg
+        uses: FedericoCarboni/setup-ffmpeg@v3
+
 
       - name: הגדרת cookies
         run: |
