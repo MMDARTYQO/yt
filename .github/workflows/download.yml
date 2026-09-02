@@ -16,6 +16,34 @@ on:
         description: 'שם הסרטון (אופציונלי)'
         required: false
         type: string
+      convert_to_gif:
+        description: 'המר ל-GIF?'
+        required: false
+        default: 'false'
+        type: choice
+        options:
+          - 'false'
+          - 'true'
+      gif_start:
+        description: 'התחלת GIF (שניות, לדוגמה: 0)'
+        required: false
+        default: '0'
+        type: string
+      gif_duration:
+        description: 'אורך GIF בשניות (לדוגמה: 10)'
+        required: false
+        default: '10'
+        type: string
+      gif_width:
+        description: 'רוחב GIF בפיקסלים (לדוגמה: 480)'
+        required: false
+        default: '480'
+        type: string
+      gif_fps:
+        description: 'FPS של GIF (לדוגמה: 10)'
+        required: false
+        default: '10'
+        type: string
 
 jobs:
   download:
@@ -39,7 +67,6 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y ffmpeg --fix-missing
 
-
       - name: הגדרת cookies
         run: |
           echo "${{ secrets.YOUTUBE_COOKIES }}" > /tmp/cookies.txt
@@ -47,15 +74,15 @@ jobs:
       - name: הורדת הסרטון
         run: |
           mkdir -p downloads
-          
+
           CUSTOM_TITLE="${{ github.event.inputs.title }}"
-          
+
           if [ -n "$CUSTOM_TITLE" ]; then
             OUTPUT_TEMPLATE="downloads/${CUSTOM_TITLE}.%(ext)s"
           else
             OUTPUT_TEMPLATE="downloads/%(title)s.%(ext)s"
           fi
-          
+
           yt-dlp \
             --format "${{ github.event.inputs.format }}" \
             --merge-output-format mp4 \
@@ -92,12 +119,33 @@ jobs:
             ls -lah downloads/
             exit 1
           fi
-          # מחק קבצים זמניים של yt-dlp (חלקים שלא מוזגו)
           find downloads/ -maxdepth 1 -name "*.part" -delete
           find downloads/ -maxdepth 1 -name "*.ytdl" -delete
           find downloads/ -maxdepth 1 -name "*.f[0-9]*" -delete
           echo "קבצים סופיים:"
           ls -lh downloads/
+
+      - name: המרה ל-GIF
+        if: ${{ github.event.inputs.convert_to_gif == 'true' }}
+        run: |
+          MP4_FILE=$(find downloads/ -maxdepth 1 -name "*.mp4" | head -n 1)
+          GIF_FILE="${MP4_FILE%.mp4}.gif"
+
+          echo "ממיר: $MP4_FILE → $GIF_FILE"
+          echo "הגדרות: התחלה=${{ github.event.inputs.gif_start }}s, אורך=${{ github.event.inputs.gif_duration }}s, רוחב=${{ github.event.inputs.gif_width }}px, FPS=${{ github.event.inputs.gif_fps }}"
+
+          ffmpeg -ss "${{ github.event.inputs.gif_start }}" \
+                 -t "${{ github.event.inputs.gif_duration }}" \
+                 -i "$MP4_FILE" \
+                 -vf "fps=${{ github.event.inputs.gif_fps }},scale=${{ github.event.inputs.gif_width }}:-1:flags=lanczos,split[s0][s1];[s0]palettegen[p];[s1][p]paletteuse" \
+                 -loop 0 \
+                 "$GIF_FILE"
+
+          echo "=== GIF נוצר בהצלחה ==="
+          ls -lh "$GIF_FILE"
+
+          # אם רוצים רק GIF ולא MP4, מוחקים את ה-MP4
+          # rm "$MP4_FILE"
 
       - name: העלאת הסרטון כ-Artifact
         uses: actions/upload-artifact@v4
